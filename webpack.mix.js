@@ -11,5 +11,8 @@ const mix = require('laravel-mix');
  |
  */
 
-mix.js('resources/js/app.js', 'public/js')
-    .sass('resources/sass/app.scss', 'public/css');
+mix.js('resources/js/app.js', 'public/mix/js')
+    .sass('resources/sass/app.scss', 'public/mix/css');
+mix.scripts('resources/js/instascan.min.js', 'public/mix/js/instascan.min.js');
+mix.scripts('node_modules/sweetalert2/dist/sweetalert2.min.js', 'public/mix/js/sweetalert2.min.js');
+mix.styles('node_modules/sweetalert2/dist/sweetalert2.min.css', 'public/mix/css/sweetalert2.min.css');
