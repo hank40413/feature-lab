@@ -12,5 +12,9 @@
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    echo 'root';
+});
+
+Route::get('qr-scan', function () {
+    return view('qr-scan.index');
 });
