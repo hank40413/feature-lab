@@ -7,18 +7,31 @@
 @endsection
 @section('style')
     <style>
-        .custom-swal2-popup {
-            width: 50%
+        .popup-for-scanner {
+            width: 50%;
+        }
+
+        .popup-for-scan-result {
+            width: 80%;
+        }
+
+        .popup-for-scan-result p:only-child {
+            font-weight: bold;
+            text-align: center;
         }
 
         @media screen and (max-width: 1000px) {
-            .custom-swal2-popup {
-                width: 80%
+            .popup-for-scanner {
+                width: 80%;
             }
         }
 
         .scanner-preview.active {
-            width: 90%
+            width: 90%;
+        }
+
+        .scanner-capture-image {
+            width: 100%;
         }
 
         .scanner-preview.inactive {
@@ -29,7 +42,10 @@
 
 @section('body')
     <div class="container" style="padding: 10px">
-        <button id="start-scan-btn" class="btn btn-success">開始掃描</button>
+        <button id="start-scan-btn" class="btn btn-primary" type="button" disabled>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            偵測相機中...
+        </button>
     </div>
 @endsection
 
@@ -40,35 +56,38 @@
 
 @section('script')
     <script>
-        let camera, startScanBtn, videoElement, scanner;
+        let cameras, startScanBtn, videoElement, scanner;
 
         startScanBtn = $('#start-scan-btn');
         videoElement = $('<video class="scanner-preview"></video>')[0];
         scanner = new Instascan.Scanner({
             video: videoElement,
+            captureImage: true,
             mirror: false,
             backgroundScan: false
         });
 
         $(document).ready(function () {
             Instascan.Camera.getCameras()
-                .then(function (cameras) {
-                    camera = cameras[0];
+                .then(function (getCameras) {
+                    cameras = getCameras;
+
+                    scanner.addListener('scan', scannerOnScan);
+                    scanner.addListener('active', scannerOnActive);
+                    startScanBtn.on('click', startScanBtnOnClickListener);
+                    startScanBtn.removeClass('btn-primary');
+                    startScanBtn.addClass('btn-success');
+                    startScanBtn.html('開始掃描');
+                    startScanBtn.attr('disabled', false);
                 })
                 .catch(function (e) {
                     console.error('No cameras found.');
-                    startScanBtn.attr('disabled', true);
-                    if (startScanBtn.hasClass('btn-success')) {
-                        startScanBtn.removeClass('btn-success');
-                        startScanBtn.addClass('btn-danger');
-                    }
-                    startScanBtn.text('找不到攝影機');
-                    startScanBtn.css({ cursor: 'not-allowed' });
-                });
 
-            scanner.addListener('scan', scannerOnScan);
-            scanner.addListener('active', scannerOnActive);
-            startScanBtn.on('click', startScanBtnOnClickListener);
+                    startScanBtn.removeClass('btn-success');
+                    startScanBtn.addClass('btn-danger');
+                    startScanBtn.html('找不到攝影機');
+                    startScanBtn.css({cursor: 'not-allowed'});
+                });
         });
 
         const startScanBtnOnClickListener = function () {
@@ -78,24 +97,68 @@
                 showCancelButton: true,
                 cancelButtonText: '停止',
                 cancelButtonColor: '#E3342F',
-                onBeforeOpen: function () {
+                customClass: {
+                    popup: 'popup-for-scanner',
+                },
+                onBeforeOpen() {
                     Swal.showLoading();
                 },
-                customClass: {
-                    popup: 'custom-swal2-popup',
+                onOpen() {
+                    if (cameras.length === 1) {
+                        scanner.start(cameras[0]);
+                    }
                 },
-            }).then(function () {
-                scanner.stop();
+                onClose() {
+                    scanner.stop();
+                }
             });
-            scanner.start(camera);
         };
 
-        const scannerOnScan = function (content) {
-            console.log(content);
+        const scannerOnScan = function (content, image) {
+            let resultContent =
+                '<div class="container">\
+                    <div class="row">\
+                        <div class="col">\
+                            <p>掃描畫面</p>\
+                        </div>\
+                        <div class="col">\
+                            <p>掃描內容</p>\
+                        </div>\
+                        <div class="w-100"></div>\
+                        <div class="col">\
+                            <img class="scanner-capture-image" src="' + image + '" alt="掃描的畫面" />\
+                        </div>\
+                        <div class="col">\
+                            <p>\
+                                ' + content + (isUrl(content) ? '<a class="btn btn-info" style="color: white; margin: 3px;" href="' + content + '">前往</a>' : '') + '\
+                            </p>\
+                        </div>\
+                    </div>\
+                </div>';
+
+            Swal.close();
+            Swal.fire({
+                title: '掃描結果',
+                html: resultContent,
+                confirmButtonText: '確定',
+                customClass: {
+                    popup: 'popup-for-scan-result',
+                },
+            });
         };
 
         const scannerOnActive = function () {
             Swal.hideLoading();
         };
+
+        function isUrl(str) {
+            let pattern = new RegExp('^(https?:\\/\\/)?' +
+                '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.?)+[a-z]{2,}|' +
+                '((\\d{1,3}\\.){3}\\d{1,3}))' +
+                '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' +
+                '(\\?[;&a-z\\d%_.~+=-]*)?' +
+                '(\\#[-a-z\\d_]*)?$', 'i');
+            return pattern.test(str);
+        }
     </script>
 @endsection
