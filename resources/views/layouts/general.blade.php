@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="{{ asset('mix/css/app.css') }}">
     <style>
         body {
-            color: #f0f0f0;
+            background: #f0f0f0;
         }
     </style>
     @yield('include-styles')
