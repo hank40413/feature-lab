@@ -1,6 +1,10 @@
 # feature-lab
 用來實驗各種功能或是學習使用各種套件
 
+## 實作功能
+### [qr-scan](https://github.com/hank40413/feature-lab/wiki/qr-scan) 
+利用 `instascan` 實作網頁版二維條碼掃描器  
+
 ## 使用套件
 ### composer
 #### laravel/framework
