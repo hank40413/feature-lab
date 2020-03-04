@@ -91,7 +91,7 @@
         });
 
         const startScanBtnOnClickListener = function () {
-            Swal.fire({
+            let scannerModalObj = {
                 html: videoElement,
                 showConfirmButton: false,
                 showCancelButton: true,
@@ -103,15 +103,42 @@
                 onBeforeOpen() {
                     Swal.showLoading();
                 },
-                onOpen() {
-                    if (cameras.length === 1) {
-                        scanner.start(cameras[0]);
-                    }
-                },
                 onClose() {
                     scanner.stop();
                 }
-            });
+            };
+
+            if (cameras.length > 1) {
+                Swal.fire({
+                    title: '選擇相機',
+                    html: $('<div id="sel-camera-buttons"></div>'),
+                    showConfirmButton: false,
+                    showCancelButton: true,
+                    cancelButtonText: '取消',
+                    onBeforeOpen(popup) {
+                        let selCameraButtons = $(popup).find('#sel-camera-buttons');
+                        let startCameraButton;
+
+                        for (let camera of cameras) {
+                            if (camera.hasOwnProperty('name')) {
+                                startCameraButton = $('<button class="btn btn-info" style="margin: 5px;">' + camera.name + '</button>');
+                                startCameraButton.on('click', function () {
+                                    scannerModalObj.onOpen = function () {
+                                        scanner.start(camera);
+                                    };
+                                    Swal.fire(scannerModalObj);
+                                });
+                                selCameraButtons.append(startCameraButton);
+                            }
+                        }
+                    }
+                });
+            } else {
+                scannerModalObj.onOpen = function () {
+                    scanner.start(cameras[0]);
+                };
+                Swal.fire(scannerModalObj);
+            }
         };
 
         const scannerOnScan = function (content, image) {
